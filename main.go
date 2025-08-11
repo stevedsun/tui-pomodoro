@@ -66,6 +66,7 @@ func initialModel() model {
 }
 
 func (m model) Init() tea.Cmd {
+	m.resetTimer()
 	return nil
 }
 
@@ -76,19 +77,37 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 		case "left":
-			if m.ticker == nil {
-				if m.duration > 5*time.Minute {
-					m.duration -= 5 * time.Minute
-					m.remaining = m.duration
-					m.resetTimer()
-				}
+			if m.ticker != nil {
+				m.ticker.Stop()
+				m.ticker = nil
+				m.formatDuration()
+				m.remaining = m.duration
+				m.resetTimer()
+				return m, nil
 			}
-		case "right":
-			if m.ticker == nil {
-				m.duration += 5 * time.Minute
+			if m.duration > 5*time.Minute {
+				m.formatDuration()
+				m.duration -= 5 * time.Minute
+				m.remaining = m.duration
+				m.resetTimer()
+			} else {
+				m.duration = 0 * time.Minute
 				m.remaining = m.duration
 				m.resetTimer()
 			}
+		case "right":
+			if m.ticker != nil {
+				m.ticker.Stop()
+				m.ticker = nil
+				m.formatDuration()
+				m.remaining = m.duration
+				m.resetTimer()
+				return m, nil
+			}
+			m.formatDuration()
+			m.duration += 5 * time.Minute
+			m.remaining = m.duration
+			m.resetTimer()
 		}
 	case startTimerMsg:
 		if m.ticker == nil {
@@ -98,12 +117,14 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	case tickMsg:
-		if m.remaining > 0 {
+		if m.remaining > 0 && m.ticker != nil {
 			m.remaining -= time.Second
+			time.Sleep(time.Second)
+			m.duration = m.remaining
 			return m, func() tea.Msg {
 				return tickMsg(time.Now())
 			}
-		} else {
+		} else if m.ticker != nil {
 			m.ticker.Stop()
 			m.ticker = nil
 			m.remaining = m.duration
@@ -113,11 +134,16 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// format mintue number to be multiple of 5
+func (m *model) formatDuration() {
+	m.duration = time.Duration(m.duration.Minutes()/5) * 5 * time.Minute
+}
+
 func (m *model) resetTimer() {
 	if m.timer != nil {
 		m.timer.Stop()
 	}
-	m.timer = time.AfterFunc(2*time.Second, func() {
+	m.timer = time.AfterFunc(4*time.Second, func() {
 		m.program.Send(startTimerMsg{})
 	})
 }
