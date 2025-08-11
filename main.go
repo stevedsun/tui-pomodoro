@@ -99,10 +99,6 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.ticker != nil {
 				m.ticker.Stop()
 				m.ticker = nil
-				m.formatDuration()
-				m.remaining = m.duration
-				m.resetTimer()
-				return m, nil
 			}
 			m.formatDuration()
 			m.duration += 5 * time.Minute
@@ -128,6 +124,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.ticker.Stop()
 			m.ticker = nil
 			m.remaining = m.duration
+			tea.Printf("\a")
 		}
 	}
 
@@ -143,7 +140,7 @@ func (m *model) resetTimer() {
 	if m.timer != nil {
 		m.timer.Stop()
 	}
-	m.timer = time.AfterFunc(4*time.Second, func() {
+	m.timer = time.AfterFunc(2*time.Second, func() {
 		m.program.Send(startTimerMsg{})
 	})
 }
@@ -157,7 +154,7 @@ func (m model) View() string {
 	s.WriteString(m.renderControls())
 	s.WriteString("\n")
 
-	box := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(1).Render(s.String())
+	box := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Width(width + 2).Padding(1).Render(s.String())
 
 	return box
 }
