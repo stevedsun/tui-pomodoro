@@ -13,6 +13,7 @@ import (
 const (
 	defaultTime = 25 * time.Minute
 	width       = 50
+	step        = 1
 )
 
 type model struct {
@@ -85,9 +86,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.resetTimer()
 				return m, nil
 			}
-			if m.duration > 5*time.Minute {
+			if m.duration > step*time.Minute {
 				m.formatDuration()
-				m.duration -= 5 * time.Minute
+				m.duration -= step * time.Minute
 				m.remaining = m.duration
 				m.resetTimer()
 			} else {
@@ -101,7 +102,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.ticker = nil
 			}
 			m.formatDuration()
-			m.duration += 5 * time.Minute
+			m.duration += step * time.Minute
 			m.remaining = m.duration
 			m.resetTimer()
 		}
@@ -131,9 +132,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// format mintue number to be multiple of 5
+// format mintue number to be multiple of step
 func (m *model) formatDuration() {
-	m.duration = time.Duration(m.duration.Minutes()/5) * 5 * time.Minute
+	m.duration = time.Duration(m.duration.Minutes()/step) * step * time.Minute
 }
 
 func (m *model) resetTimer() {
@@ -184,7 +185,7 @@ func (m model) renderTimeline() string {
 	s.WriteString("\n")
 
 	var labels strings.Builder
-	for i := 0; i < width; i++ {
+	for i := 0; i < width-1; i++ {
 		min := minutes - width/2 + i
 		style := m.styles.dark
 		distance := abs(i - width/2)
